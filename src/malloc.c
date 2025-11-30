@@ -63,14 +63,14 @@ struct _block *heapList = NULL; /* Free list to track the _blocks available */
  * \param size size of the _block needed in bytes 
  *
  * \return a _block that fits the request or NULL if no free _block matches
- *
+ * 
  * \TODO Implement Next Fit
- * \TODO Implement Best Fit
+ * \TODO Implement Best Fit 
  * \TODO Implement Worst Fit
  */
 struct _block *findFreeBlock(struct _block **last, size_t size) 
 {
-   struct _block *curr = heapList;
+   struct _block *curr = heapList;     /* curr declared & initialized as heapList */
 
 #if defined FIT && FIT == 0
    /* First fit */
@@ -82,6 +82,12 @@ struct _block *findFreeBlock(struct _block **last, size_t size)
    // without finding a node or it ends pointing to a free node that has enough
    // space for the request.
    // 
+
+   while (curr != NULL)
+   {
+
+   }
+   
    while (curr && !(curr->free && curr->size >= size)) 
    {
       *last = curr;
@@ -241,6 +247,20 @@ void free(void *ptr)
    /* TODO: Coalesce free _blocks.  If the next block or previous block 
             are free then combine them with this block being freed.
    */
+   /* adjacent blocks: I'm the curr block. Is my next free? Join me(also another free block) with my prev
+   Is my prev block free? Rinse & repeat. */
+
+   if (curr->next != NULL && curr->next->free)
+   {
+      curr->size = curr->size + curr->next->size + sizeof(struct _block);
+      curr->next = curr->next->next;      /* think of -> in C as dot pointer that accesses the elements. don't confuse yourself*/
+                                          /* we wanna update the next block by kind of linking it to the block after it. also update the prev block*/
+      if (curr->next != NULL) /*checking for free previous is important as we don't know whether my prev is empty or free or not. this is a little harder than checking for just the next free block as prev block needs to be checked by traversing the whole list from start*/
+      {
+         /*Now, we need to find such a block whose next points to our current, i.e., traversing from heapList*/
+      }
+   }
+  
 }
 
 void *calloc( size_t nmemb, size_t size )
