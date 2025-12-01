@@ -165,13 +165,10 @@ struct _block *findFreeBlock(struct _block **last, size_t size)
    starting at anywhere other than A = nf
    
    @ B, my var is myCurrPosition. 
-   */
 
-   /* 
    dividing the searchable heap memory into 2 sections:
    1. from my current position i.e., currNextFit to the end of the free list 
    2. from the beginning of the heapLit to currNextFit 
-   
    */
 
    myCurrPosition = currNextFit;    /* Part 1 */
@@ -186,24 +183,22 @@ struct _block *findFreeBlock(struct _block **last, size_t size)
       /* note: always after a for or while loop, update the vars */
       *last = myCurrPosition;
       myCurrPosition = myCurrPosition->next;    /* myCurrPosition is my NEXT position */
-
-
-      myCurrPosition = heapList;    /* Part 2 */
-      while (myCurrPosition != currNextFit)
-      {
-         if (myCurrPosition->free && myCurrPosition->size >= size)
-         {
-            /* similar to part 1 */
-            *last = myCurrPosition;
-            currNextFit  = myCurrPosition->next;
-            return myCurrPosition;
-         }      
-
-         *last = myCurrPosition;
-         myCurrPosition = myCurrPosition->next;
-      }
-      return NULL;
    }
+
+   myCurrPosition = heapList;    /* Part 2 */
+   while (myCurrPosition != currNextFit)
+   {
+      if (myCurrPosition->free && myCurrPosition->size >= size)
+      {
+         /* similar to part 1 */
+         *last = myCurrPosition;
+         currNextFit  = myCurrPosition->next;
+         return myCurrPosition;
+      }
+      *last = myCurrPosition;
+      myCurrPosition = myCurrPosition->next;
+   }
+   return NULL;
 #endif
 
    return curr;
@@ -248,6 +243,7 @@ struct _block *growHeap(struct _block *last, size_t size)
    }
 
    num_grows++;   /* heap update = heap grows so num_grows ++ */
+   num_blocks++; /* any update to heap size triggers block num changes */
 
    /* Attach new _block to previous _block */
    if (last) 
@@ -405,7 +401,6 @@ void free(void *ptr)
       num_coalesces++;    /* just like splitting count went up, coalescing count increases when we implement the above code */
       num_blocks--;      /* bcuz blocks are combined/coalescing, their count goes dow*/
    }
-
 }
 
 void *calloc( size_t nmemb, size_t size )
@@ -434,9 +429,46 @@ void *calloc( size_t nmemb, size_t size )
 void *realloc( void *ptr, size_t size )
 {
    // \TODO Implement realloc
-   return NULL;
-}
+   /*
+   if pointer is null -> call malloc
+   handle size 0 by returning null
+   look for a big enough block, copy + free old block BUT if my current block matches this, no need to look further
+   */
 
+   if (ptr == NULL)     /* malloc() behavior */
+   {
+      return malloc(size);
+   }
+
+   if (size == 0)       /* free() behavior */
+   {
+      free(ptr);
+      return NULL;
+   }
+
+   struct _block *curr = BLOCK_HEADER(ptr);
+   size_t new_adjusted_size = ALIGN4(size);           /* implementation shown in the beginning */
+   
+   if (curr->size >= new_adjusted_size)
+   {
+      return ptr;
+   }
+   
+   /* what if we need more memory, exceeding size as defined by realloc? 
+   we malloc. */
+   
+   void *new_ptr = malloc(size);
+
+   if (new_ptr == NULL)
+   {
+      return NULL;      /* default case handling; line 455 holds => og ptr*/
+   }
+
+   memcpy(new_ptr, ptr, curr->size);      /* old data from ptr gets copied to new ptr */
+   free(ptr);
+
+   return new_ptr;      /* just like calloc, we return the ptr, not NULL */
+}
 
 
 /* vim: IENTRTMzMjAgU3ByaW5nIDIwMOO2= ----------------------------------------*/
