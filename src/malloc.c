@@ -267,6 +267,10 @@ void *malloc(size_t size)
             don't split the block.
    */
 
+   num_splits++;  /* after splitting, logically, split count goes up and so does the num of blocks */
+   num_blocks++;
+
+   
    /* Could not find free _block, so grow heap */
    if (next == NULL) 
    {
