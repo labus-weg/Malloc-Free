@@ -70,7 +70,7 @@ struct _block *heapList = NULL; /* Free list to track the _blocks available */
  */
 struct _block *findFreeBlock(struct _block **last, size_t size) 
 {
-   struct _block *curr = heapList;     /* curr declared & initialized as heapList */
+   struct _block *curr = heapList;     /* curr declared & initialized as heapList */   /* imp: this changes to last allocated block for nf */
 
 #if defined FIT && FIT == 0
    /* First fit */
@@ -167,6 +167,65 @@ struct _block *findFreeBlock(struct _block **last, size_t size)
 // \TODO Put your Next Fit code in this #ifdef block
 #if defined NEXT && NEXT == 0
    /** \TODO Implement next fit here */
+
+   /* some notes: nf is like ff but we NEED to track where we left off LAST time 
+   DS: global/static var needed to do this tracking
+
+   */
+
+   static struct _block *currNextFit = NULL;  /* instead of heapList */
+   struct _block *myCurrPosition;
+   
+   if (currNextFit == NULL)
+   {
+      currNextFit = heapList;
+   }
+
+   /*
+   e.g., A -> B -> C -> D -> E
+   starting @ A = ff
+   starting at anywhere other than A = nf
+   
+   @ B, my var is myCurrPosition. 
+   */
+
+   /* 
+   dividing the searchable heap memory into 2 sections:
+   1. from my current position i.e., currNextFit to the end of the free list 
+   2. from the beginning of the heapLit to currNextFit 
+   
+   */
+
+   myCurrPosition = currNextFit;    /* Part 1 */
+   while (myCurrPosition != NULL)
+   {
+      if (myCurrPosition->free && myCurrPosition->size >= size)
+      {
+         *last = myCurrPosition;    /* my current position is stored as the last pointer */
+         currNextFit  = myCurrPosition->next; /* my next position stored as my current position, like ff */
+         return myCurrPosition;
+      }         
+      /* note: always after a for or while loop, update the vars */
+      *last = myCurrPosition;
+      myCurrPosition = myCurrPosition->next;    /* myCurrPosition is my NEXT position */
+
+
+      myCurrPosition = heapList;    /* Part 2 */
+      while (myCurrPosition != currNextFit)
+      {
+         if (myCurrPosition->free && myCurrPosition->size >= size)
+         {
+            /* similar to part 1 */
+            *last = myCurrPosition;
+            currNextFit  = myCurrPosition->next;
+            return myCurrPosition;
+         }      
+
+         *last = myCurrPosition;
+         myCurrPosition = myCurrPosition->next;
+      }
+      return NULL;
+   }
 #endif
 
    return curr;
