@@ -74,7 +74,7 @@ struct _block *findFreeBlock(struct _block **last, size_t size)
 
 #if defined FIT && FIT == 0
    /* First fit */
-   //
+   
    // While we haven't run off the end of the linked list and
    // while the current node we point to isn't free or isn't big enough
    // then continue to iterate over the list.  This loop ends either
@@ -93,6 +93,42 @@ struct _block *findFreeBlock(struct _block **last, size_t size)
 // \TODO Put your Best Fit code in this #ifdef block
 #if defined BEST && BEST == 0
    /** \TODO Implement best fit here */
+      /* Best fit */
+   //
+   // While we haven't run off the end of the linked list and
+   // while the current node we point to isn't free or isn't the smallest block that is big enough
+   // then continue to iterate over the list.  This loop ends either
+   // with curr pointing to NULL, meaning we've run to the end of the list
+   // without finding a node or it ends pointing to a free node that has enough
+   // space for the request.
+   // 
+   struct _block *trackBest = NULL;   /*trackBest tracks the smallest block that's available and big enough for the user process request */
+                                       /*prof's tip: write while loop & update the var immediately so you don't forget it afterwards; fill in the loop w/ logic later*/
+   struct _block *bestPredecessor = NULL; /* tracks the block before best fit */
+
+   while (curr != NULL)
+   {
+      if (curr->free && curr->size >= size)
+      {
+         if (trackBest == NULL || curr->size < trackBest->size)
+         {
+            trackBest = curr;
+            bestPredecessor = *last;     /* last is stored as the predecessor block*/     
+         }
+      }
+      *last = curr;     /* old last = new predecessor*/
+      curr = curr->next;
+   }
+
+   if (trackBest != NULL)
+   {
+      *last = bestPredecessor;
+   }
+   else
+   {
+      *last = NULL;
+   }
+   return trackBest;
 #endif
 
 // \TODO Put your Worst Fit code in this #ifdef block
@@ -107,6 +143,10 @@ struct _block *findFreeBlock(struct _block **last, size_t size)
 
    return curr;
 }
+
+/* understanding my seg faults w/ printf statements */
+
+
 
 /*
  * \brief growheap
@@ -190,6 +230,7 @@ void *malloc(size_t size)
 
    struct _block *last = heapList;
    struct _block *next = findFreeBlock(&last, size);
+   num_mallocs++;
 
    /* TODO: If the block found by findFreeBlock is larger than we need then:
             If the leftover space in the new block is greater than the sizeof(_block)+4 then
@@ -238,6 +279,7 @@ void free(void *ptr)
    struct _block *curr = BLOCK_HEADER(ptr);
    assert(curr->free == 0);
    curr->free = true;
+   num_frees++;      /* every time we call free(), num_frees is incremented. same goes for all other stats */
 
    /* TODO: Coalesce free _blocks.  If the next block or previous block 
             are free then combine them with this block being freed.
@@ -245,12 +287,12 @@ void free(void *ptr)
    /* adjacent blocks: I'm the curr block. Is my next free? Join me(also another free block) with my prev
    Is my prev block free? Rinse & repeat. */
 
-   if (curr->next != NULL && curr->next->free)
+   if (curr && curr->next != NULL && curr->next->free)
    {
       curr->size = curr->size + curr->next->size + sizeof(struct _block);
       curr->next = curr->next->next;      /* think of -> in C as dot pointer that accesses the elements. don't confuse yourself*/
                                           /* we wanna update the next block by kind of linking it to the block after it. also update the prev block*/
-      if (curr->next != NULL) /*checking for free previous is important as we don't know whether my prev is empty or free or not. this is a little harder than checking for just the next free block as prev block needs to be checked by traversing the whole list from start*/
+      if (curr && curr->next != NULL) /*checking for free previous is important as we don't know whether my prev is empty or free or not. this is a little harder than checking for just the next free block as prev block needs to be checked by traversing the whole list from start*/
       {
          /*Now, we need to find such a block whose next points to our current, i.e., traversing from heapList*/
       }
