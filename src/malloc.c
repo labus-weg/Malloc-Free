@@ -262,6 +262,8 @@ struct _block *growHeap(struct _block *last, size_t size)
    {
       heapList = curr;
    }
+   
+   num_grows++;   /* heap update = heap grows so num_grows ++ */
 
    /* Attach new _block to previous _block */
    if (last) 
