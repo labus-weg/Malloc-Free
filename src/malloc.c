@@ -286,7 +286,7 @@ void *malloc(size_t size)
       atexit( printStatistics );
    }
 
-   num_requested += size;  /* how much memory is requested before alignment. */
+   num_requested += size;  /* how much memory is requested before alignment. add size to the num req */
    num_mallocs++;
 
    /* Align to multiple of 4 */
@@ -411,7 +411,24 @@ void free(void *ptr)
 void *calloc( size_t nmemb, size_t size )
 {
    // \TODO Implement calloc
-   return NULL;
+   /* keeping stats from malloc part consistent */
+
+   /* if OS gives a heap size that exceeds requested size, an overflow is inevitable */
+   /* handle it*/
+   if (nmemb != 0 && size > SIZE_MAX / nmemb)
+   {
+      return NULL;
+   }
+
+   size_t total_requested_heap_size = nmemb * size;
+   void *p = malloc(total_requested_heap_size);
+
+   if (p != NULL)
+   {
+      memset(p, 0, total_requested_heap_size);     /* memory is zeroed out if */
+   }
+
+   return p;
 }
 
 void *realloc( void *ptr, size_t size )
