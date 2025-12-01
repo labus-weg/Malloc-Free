@@ -134,6 +134,34 @@ struct _block *findFreeBlock(struct _block **last, size_t size)
 // \TODO Put your Worst Fit code in this #ifdef block
 #if defined WORST && WORST == 0
    /** \TODO Implement worst fit here */
+
+   struct _block *trackWost = NULL;   /* trackWost tracks the largest block that's available and big enough for the user process request */
+   struct _block *worstPredecessor = NULL;    /* tracks the block before worst fit */
+
+   while (curr != NULL)
+   {
+      if (curr->free && curr->size <= size)    /* flipped the checking condition to find the max size of my curr block */
+      {
+         if (trackWost == NULL || curr->size > trackWost->size)   /* sign flipped */
+         {
+            trackWost = curr;
+            worstPredecessor = *last;     /* last is stored as the predecessor block*/     
+         }
+      }
+      *last = curr;     /* old last = new predecessor*/
+      curr = curr->next;
+   }
+
+   if (trackWost != NULL)
+   {
+      *last = worstPredecessor;
+   }
+   else
+   {
+      *last = NULL;
+   }
+   return trackWost;
+
 #endif
 
 // \TODO Put your Next Fit code in this #ifdef block
