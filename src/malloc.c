@@ -309,6 +309,20 @@ void *malloc(size_t size)
             If the leftover space in the new block is less than the sizeof(_block)+4 then
             don't split the block.
    */
+   if (next != NULL && next->size > size + sizeof(struct _block) + 4)
+   {
+      /* we make new free block from any leftover space and return it to OS if it's still unused */
+      struct _block *split = (struct _block *)((char *)next + sizeof(struct _block) + size);
+      split->size = next->size - size - sizeof(struct _block);
+      split->free = true;
+      split->next = next->next;     /* 1st next is the data type _block next, 2nd is the object or next element */
+      
+      next->size = size;      /* update the data types*/
+      next->next = split;
+      
+      num_splits++;  /*stat update*/
+      num_blocks++;
+   }
 
    /* Could not find free _block, so grow heap */
    if (next == NULL) 
