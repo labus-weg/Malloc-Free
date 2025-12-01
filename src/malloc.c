@@ -465,7 +465,7 @@ void *realloc( void *ptr, size_t size )
    }
 
    memcpy(new_ptr, ptr, curr->size);      /* old data from ptr gets copied to new ptr */
-   free(ptr);
+   free(ptr);                             /* note: memcpy is by far the most optimized way to copy-paste the data when we're dealing w/ heaps or large memory that comes in contiguous blocks */
 
    return new_ptr;      /* just like calloc, we return the ptr, not NULL */
 }
