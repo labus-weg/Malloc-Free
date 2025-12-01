@@ -302,6 +302,7 @@ void *malloc(size_t size)
       atexit( printStatistics );
    }
 
+   num_requested = size + num_requested;  /* how much memory is requested */
    /* Align to multiple of 4 */
    size = ALIGN4(size);
 
