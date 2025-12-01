@@ -104,7 +104,6 @@ struct _block *findFreeBlock(struct _block **last, size_t size)
    // 
    struct _block *trackBest = NULL;   /*trackBest tracks the smallest block that's available and big enough for the user process request */
                                        /*prof's tip: write while loop & update the var immediately so you don't forget it afterwards; fill in the loop w/ logic later*/
-   struct _block *bestPredecessor = NULL; /* tracks the block before best fit */
 
    while (curr != NULL)
    {
@@ -113,20 +112,10 @@ struct _block *findFreeBlock(struct _block **last, size_t size)
          if (trackBest == NULL || curr->size < trackBest->size)
          {
             trackBest = curr;
-            bestPredecessor = *last;     /* last is stored as the predecessor block*/     
          }
       }
-      *last = curr;     /* old last = new predecessor*/
+      *last = curr;
       curr = curr->next;
-   }
-
-   if (trackBest != NULL)
-   {
-      *last = bestPredecessor;
-   }
-   else
-   {
-      *last = NULL;
    }
    return trackBest;
 #endif
@@ -136,7 +125,6 @@ struct _block *findFreeBlock(struct _block **last, size_t size)
    /** \TODO Implement worst fit here */
 
    struct _block *trackWorst = NULL;   /* trackWorst tracks the largest block that's available and big enough for the user process request */
-   struct _block *worstPredecessor = NULL;    /* tracks the block before worst fit */
 
    while (curr != NULL)
    {
@@ -145,20 +133,10 @@ struct _block *findFreeBlock(struct _block **last, size_t size)
          if (trackWorst == NULL || curr->size > trackWorst->size)   /* sign flipped */
          {  
             trackWorst = curr;
-            worstPredecessor = *last;     /* last is stored as the predecessor block*/     
          }
       }
-      *last = curr;     /* old last = new predecessor*/
+      *last = curr;
       curr = curr->next;
-   }
-
-   if (trackWorst != NULL)
-   {
-      *last = worstPredecessor;
-   }
-   else
-   {
-      *last = NULL;
    }
    return trackWorst;
 
@@ -332,9 +310,6 @@ void *malloc(size_t size)
             don't split the block.
    */
 
-   num_splits++;  /* after splitting, logically, split count goes up and so does the num of blocks */
-   num_blocks++;
-   
    /* Could not find free _block, so grow heap */
    if (next == NULL) 
    {
@@ -387,19 +362,36 @@ void free(void *ptr)
    /* adjacent blocks: I'm the curr block. Is my next free? Join me(also another free block) with my prev
    Is my prev block free? Rinse & repeat. */
 
-   if (curr && curr->next != NULL && curr->next->free)
+   /* traversing from heapList, we find the prev free block so as to reverse coalesce. */
+
+   struct _block *prevBlock = NULL;
+   struct _block *tempBlock = heapList;
+   
+   while (tempBlock != NULL && tempBlock != curr)
+   {
+      prevBlock = tempBlock;
+      tempBlock = tempBlock->next;
+   }
+   /* coalesce upon free */
+   if (prevBlock != NULL && prevBlock->free)
+   {
+      prevBlock->size += sizeof(struct _block) + curr->size;
+      prevBlock->next = curr->next;
+      curr = prevBlock;
+      num_coalesces++;     /* updating the stats*/
+      num_blocks--;
+   }
+
+   if (curr != NULL && curr->next != NULL && curr->next->free)
    {
       curr->size = curr->size + curr->next->size + sizeof(struct _block);
       curr->next = curr->next->next;      /* think of -> in C as dot pointer that accesses the elements. don't confuse yourself*/
-                                          /* we wanna update the next block by kind of linking it to the block after it. also update the prev block*/
-      if (curr && curr->next != NULL) /*checking for free previous is important as we don't know whether my prev is empty or free or not. this is a little harder than checking for just the next free block as prev block needs to be checked by traversing the whole list from start*/
-      {
-         /*Now, we need to find such a block whose next points to our current, i.e., traversing from heapList*/
-      }
+      /* we wanna update the next block by kind of linking it to the block after it. also update the prev block*/
+
+      num_coalesces++;    /* just like splitting count went up, coalescing count increases when we implement the above code */
+      num_blocks--;      /* bcuz blocks are combined/coalescing, their count goes dow*/
    }
 
-   num_coalesces++;  /* just like splitting count went up, coalescing count increases when we implement the above code */
-   num_blocks--;  /* bcuz blocks are combined/coalescing, their count goes dow*/
 }
 
 void *calloc( size_t nmemb, size_t size )
