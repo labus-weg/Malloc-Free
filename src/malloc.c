@@ -416,14 +416,14 @@ void *calloc( size_t nmemb, size_t size )
    }
 
    size_t total_requested_heap_size = nmemb * size;
-   void *p = malloc(total_requested_heap_size);
+   void *p_calloc = malloc(total_requested_heap_size);
 
-   if (p != NULL)
+   if (p_calloc != NULL)
    {
-      memset(p, 0, total_requested_heap_size);     /* memory is zeroed out if */
+      memset(p_calloc, 0, total_requested_heap_size);     /* memory is zeroed out if */
    }
 
-   return p;
+   return p_calloc;
 }
 
 void *realloc( void *ptr, size_t size )
