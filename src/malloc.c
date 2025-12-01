@@ -140,7 +140,7 @@ struct _block *findFreeBlock(struct _block **last, size_t size)
 
    while (curr != NULL)
    {
-      if (curr->free && curr->size <= size)    /* flipped the checking condition to find the max size of my curr block */
+      if (curr->free && curr->size >= size)    /* flipped the checking condition to find the max size of my curr block */
       {
          if (trackWorst == NULL || curr->size > trackWorst->size)   /* sign flipped */
          {  
@@ -262,7 +262,13 @@ struct _block *growHeap(struct _block *last, size_t size)
    {
       heapList = curr;
    }
-   
+   /* calculate the max heap size & update stats */
+   int heapSize = (char *)sbrk(0) - (char *)heapList;
+   if (heapSize > max_heap)
+   {
+      max_heap = heapSize;
+   }
+
    num_grows++;   /* heap update = heap grows so num_grows ++ */
 
    /* Attach new _block to previous _block */
@@ -302,7 +308,9 @@ void *malloc(size_t size)
       atexit( printStatistics );
    }
 
-   num_requested = size + num_requested;  /* how much memory is requested */
+   num_requested += size;  /* how much memory is requested before alignment. */
+   num_mallocs++;
+
    /* Align to multiple of 4 */
    size = ALIGN4(size);
 
@@ -316,7 +324,6 @@ void *malloc(size_t size)
 
    struct _block *last = heapList;
    struct _block *next = findFreeBlock(&last, size);
-   num_mallocs++;
 
    /* TODO: If the block found by findFreeBlock is larger than we need then:
             If the leftover space in the new block is greater than the sizeof(_block)+4 then
@@ -327,12 +334,15 @@ void *malloc(size_t size)
 
    num_splits++;  /* after splitting, logically, split count goes up and so does the num of blocks */
    num_blocks++;
-
    
    /* Could not find free _block, so grow heap */
    if (next == NULL) 
    {
       next = growHeap(last, size);
+   }
+   else
+   {
+      num_reuses++;     /* reusing any free block after we've found them */
    }
 
    /* Could not find free _block or grow heap, so just return NULL */
