@@ -143,7 +143,7 @@ struct _block *findFreeBlock(struct _block **last, size_t size)
       if (curr->free && curr->size <= size)    /* flipped the checking condition to find the max size of my curr block */
       {
          if (trackWorst == NULL || curr->size > trackWorst->size)   /* sign flipped */
-         {
+         {  
             trackWorst = curr;
             worstPredecessor = *last;     /* last is stored as the predecessor block*/     
          }
@@ -230,10 +230,6 @@ struct _block *findFreeBlock(struct _block **last, size_t size)
 
    return curr;
 }
-
-/* understanding my seg faults w/ printf statements */
-
-
 
 /*
  * \brief growheap
