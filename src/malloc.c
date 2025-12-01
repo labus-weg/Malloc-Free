@@ -329,7 +329,9 @@ void free(void *ptr)
          /*Now, we need to find such a block whose next points to our current, i.e., traversing from heapList*/
       }
    }
-  
+
+   num_coalesces++;  /* just like splitting count went up, coalescing count increases when we implement the above code */
+   num_blocks--;  /* bcuz blocks are combined/coalescing, their count goes dow*/
 }
 
 void *calloc( size_t nmemb, size_t size )
